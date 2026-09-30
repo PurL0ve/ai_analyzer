@@ -9,6 +9,10 @@ def clean_skills(skills):
 def analyze(user_skills,required_skills):
   matched = []
   missing = []
+  rate = 0
+  user_skills = clean_skills(user_skills)
+  required_skills = clean_skills(required_skills)
+
   for skill in required_skills:
     if skill in user_skills:
       matched.append(skill)
@@ -20,3 +24,4 @@ def analyze(user_skills,required_skills):
     "missing": missing,
     "rate": rate,
   }
+
