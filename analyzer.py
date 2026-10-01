@@ -18,7 +18,10 @@ def analyze(user_skills,required_skills):
       matched.append(skill)
     else:
       missing.append(skill)
-  rate = len(matched) / len(required_skills)
+  if len(required_skills) > 0:
+    rate = len(matched) / len(required_skills)
+  else:
+    rate = 0
   return {
     "matched": matched,
     "missing": missing,
