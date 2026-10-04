@@ -1,10 +1,20 @@
 def clean_skills(skills):
-  cleaned = []
-  for skill in skills:
-    new_skill = skill.strip()
-    new_skill = new_skill.lower()
-    cleaned.append(new_skill)
-  return list(set(cleaned))
+    cleaned = []
+
+    for skill in skills:
+        new_skill = skill.strip()
+        new_skill = new_skill.lower()
+        cleaned.append(new_skill)
+
+    seen = []
+    result = []
+
+    for skill in cleaned:
+        if skill not in seen:
+            seen.append(skill)
+            result.append(skill)
+
+    return result
 
 def analyze(user_skills,required_skills):
   matched = []
