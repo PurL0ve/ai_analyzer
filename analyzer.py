@@ -6,12 +6,11 @@ def clean_skills(skills):
         new_skill = new_skill.lower()
         cleaned.append(new_skill)
 
-    seen = []
     result = []
 
     for skill in cleaned:
-        if skill not in seen:
-            seen.append(skill)
+        if skill not in result:
+         if skill != "":
             result.append(skill)
 
     return result
