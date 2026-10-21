@@ -4,3 +4,4 @@ SQLAlchemy==2.1.4
 PyMySQL==1.2.3
 pydantic==2.14.0
 python-dotenv==1.2.4
+openai==3.35.1

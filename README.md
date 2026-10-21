@@ -145,6 +145,20 @@ cd D:\ai_analyzer
 - 历史记录查询
 - 数据库初始化脚本
 - 统一响应格式
+## JD技能提取练习（独立脚本）
 
+`practice_llm.py` 使用 DeepSeek 官方 API，将脚本中的示例 JD 提取为技能列表，再调用已有 `analyzer.analyze` 规则计算技能匹配。它是有指导完成的学习练习，尚未接入网页、FastAPI 路由或数据库保存流程。
 
+先按上文安装 `requirements.txt`，在本机 `.env` 中增加 `DEEPSEEK_API_KEY`；名称和空值示例见 `.env.example`。不要提交真实密钥。终端同名环境变量默认优先于文件配置。
 
+在项目根目录运行：
+
+```powershell
+.\.venv\Scripts\python.exe .\practice_llm.py
+```
+
+每次运行都会向 DeepSeek 发送脚本中的 JD 并消耗已有 API 额度。模型名为 `deepseek-flash`，使用非思考模式；用户技能目前为脚本中的固定示例值。需要改变示例时先核对脚本，不把程序输出当作模型准确率统计。
+
+已有验证：示例 JD 返回 Python、FastAPI、MySQL；用户技能 Python/MySQL 时，规则匹配率为 2/3；完整调用有本人运行结果。JSON格式错误、skills为字符串、百分比格式化分别做过本地验证。这里只验证对应样例，不表示完整鲁棒性。
+
+当前限制：只检查 `skills` 是否为列表；未处理 JSON 顶层类型、缺失字段、列表非字符串元素和请求异常。脚本没有显式关闭客户端默认重试，勿将一次运行推定为网络失败时只尝试一次。模型字段或价格可能更新，调用前以[DeepSeek官方文档](https://api-docs.deepseek.com/zh-cn/)为准。
