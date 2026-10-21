@@ -8,10 +8,11 @@ from openai import OpenAI
 def parse_required_skills(content):
     try:
       data = json.loads(content)
-      if isinstance(data["skills"], list):
-        return data["skills"]
+      skills = data.get("skills")
+      if isinstance(skills, list):
+        return skills
       else:
-        print("skills必须是列表")
+        print("skills字段缺失或不是列表")
     except json.JSONDecodeError:
       print("返回格式不正确")
     return None
@@ -44,9 +45,12 @@ def extract_required_skills(jd):
     content = response.choices[0].message.content
     return parse_required_skills(content)
 # 提取函数
+
+
+
 if __name__ == "__main__":
-    jd = "   "
-    required_skills = extract_required_skills(jd)
+    content = '{}'
+    required_skills = parse_required_skills(content)
     if required_skills is not None:
         result = analyzer.analyze(
         ["Python", "MySQL"],
@@ -55,3 +59,4 @@ if __name__ == "__main__":
         print(result)
     else:
         print("提取失败，停止匹配")
+
