@@ -8,7 +8,11 @@ from openai import OpenAI
 def parse_required_skills(content):
     try:
       data = json.loads(content)
-      skills = data.get("skills")
+      if isinstance(data, dict): 
+        skills = data.get("skills")
+      else:
+        print("返回的JSON必须是对象")
+        return None
       if isinstance(skills, list):
         return skills
       else:
@@ -49,7 +53,7 @@ def extract_required_skills(jd):
 
 
 if __name__ == "__main__":
-    content = '{}'
+    content = '{"skills": ["Python", "FastAPI"]}'
     required_skills = parse_required_skills(content)
     if required_skills is not None:
         result = analyzer.analyze(
