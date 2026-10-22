@@ -14,6 +14,10 @@ def parse_required_skills(content):
         print("返回的JSON必须是对象")
         return None
       if isinstance(skills, list):
+        for skill in skills:
+          if not isinstance(skill, str):
+            print("skills字段必须是字符串列表")
+            return None
         return skills
       else:
         print("skills字段缺失或不是列表")
