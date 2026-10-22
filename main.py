@@ -11,6 +11,9 @@ from schemas import HistoryResponse
 from sqlalchemy.exc import SQLAlchemyError
 from schemas import ResponseModel
 
+import jd_extractor
+
+
 app = FastAPI()
 
 app.add_middleware(
@@ -26,7 +29,9 @@ class AnalyzeRequest(BaseModel):
   user_skills: list[str]
   required_skills: list[str] 
 # 分析请求模型
-
+class AnalyzeJDRequest(BaseModel):
+   jd:str
+   user_skills: list[str]
 @app.post(
       "/analyze",
       response_model = ResponseModel
@@ -51,7 +56,7 @@ def analyze_resume(
        required_skills = ",".join(request.required_skills),
        rate = result["rate"]
     )
-    try:
+    try: 
         db.add(history)
         db.commit()
     except SQLAlchemyError:
@@ -83,3 +88,27 @@ def get_history(db = Depends(get_db)):
       data = histories
    )
 # 获取分析历史接口
+
+@app.post(
+      "/analyze-jd",
+      response_model = ResponseModel
+      )
+def analyze_jd(request:AnalyzeJDRequest):
+   if request.jd.strip() == "":
+      raise HTTPException(
+         status_code = 400,
+         detail = "JD不能为空"
+      )
+   required_skills = jd_extractor.extract_required_skills(request.jd)
+   if required_skills is None:
+      raise HTTPException(
+         status_code = 502,
+         detail = "JD技能提取失败"
+      )
+   result = analyzer.analyze(request.user_skills,required_skills)
+
+   return ResponseModel(
+      code = 200,
+      message = "success",
+      data = result
+   )
