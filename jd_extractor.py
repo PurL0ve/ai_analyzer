@@ -2,7 +2,7 @@ import json
 import analyzer
 import os
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import OpenAI,APITimeoutError
 
 
 def parse_required_skills(content):
@@ -45,11 +45,15 @@ def extract_required_skills(jd):
         "content": jd
     }
     ]
-    response = client.chat.completions.create(
-      model = "deepseek-flash",
-      messages = messages,
-      extra_body = {"thinking":{"type":"disabled"}}
-  )
+    try:
+        response = client.chat.completions.create(
+        model = "deepseek-flash",
+        messages = messages,
+        extra_body = {"thinking":{"type":"disabled"}}
+    )
+    except APITimeoutError:
+        print("请求超时，请稍后再试")
+        return None
     content = response.choices[0].message.content
     return parse_required_skills(content)
 # 提取函数
