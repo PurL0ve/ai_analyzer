@@ -32,6 +32,7 @@ class AnalyzeRequest(BaseModel):
 class AnalyzeJDRequest(BaseModel):
    jd:str
    user_skills: list[str]
+   position: str
 @app.post(
       "/analyze",
       response_model = ResponseModel
@@ -54,7 +55,8 @@ def analyze_resume(
        position = request.position,
        user_skills = ",".join(request.user_skills),
        required_skills = ",".join(request.required_skills),
-       rate = result["rate"]
+       rate = result["rate"],
+       source = "manual"
     )
     try: 
         db.add(history)
@@ -93,11 +95,20 @@ def get_history(db = Depends(get_db)):
       "/analyze-jd",
       response_model = ResponseModel
       )
-def analyze_jd(request:AnalyzeJDRequest):
+def analyze_jd(
+   request:AnalyzeJDRequest,
+   db = Depends(get_db)
+   ):
+
    if request.jd.strip() == "":
       raise HTTPException(
          status_code = 400,
          detail = "JD不能为空"
+      )
+   if request.position.strip() == "":
+      raise HTTPException(
+         status_code = 400,
+         detail = "岗位名称不能为空"
       )
    required_skills = jd_extractor.extract_required_skills(request.jd)
    if required_skills is None:
@@ -107,6 +118,23 @@ def analyze_jd(request:AnalyzeJDRequest):
       )
    result = analyzer.analyze(request.user_skills,required_skills)
 
+   history = AnalysisHistory(
+      position = request.position,
+      user_skills = ",".join(request.user_skills),
+      required_skills = ",".join(required_skills),
+      rate = result["rate"],
+      source = "jd"
+   )
+
+   try:
+      db.add(history)
+      db.commit()
+   except SQLAlchemyError:
+      db.rollback()
+      raise HTTPException(
+         status_code = 500,
+         detail = "数据库保存失败"
+      )
    return ResponseModel(
       code = 200,
       message = "success",

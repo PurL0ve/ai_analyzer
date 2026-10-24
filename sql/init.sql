@@ -9,5 +9,6 @@ CREATE TABLE analysis_history(
     user_skills VARCHAR(500),
     required_skills VARCHAR(500),
     rate FLOAT,
-    created_time DATETIME
+    created_time DATETIME,
+    source VARCHAR(20) NULL DEFAULT NULL
 );

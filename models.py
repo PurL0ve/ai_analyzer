@@ -14,3 +14,4 @@ class AnalysisHistory(Base):
   required_skills = Column(String(500)) 
   rate = Column(Float)
   created_time = Column(DateTime,default=datetime.now)
+  source = Column(String(20),nullable=True)

@@ -9,6 +9,7 @@ class HistoryResponse(BaseModel):
   required_skills: str
   rate: float
   created_time: datetime | None
+  source: str | None
   class Config:
     from_attributes = True
 
