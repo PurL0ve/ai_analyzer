@@ -125,6 +125,14 @@ cd D:\ai_analyzer
 
 ### POST /analyze
 
+#### 输入校验
+
+请求字段为`position: str`、`user_skills: list[str]`和`required_skills: list[str]`。由FastAPI/Pydantic进行请求校验；缺少必填字段或无法通过请求模型校验时，默认返回HTTP422。
+
+通过请求校验后，岗位名称去掉首尾空白后不能为空；本人技能列表和岗位要求列表各自至少包含一项去掉首尾空白后仍非空的字符串。这里仅检查是否存在非空白文本，不判断技能是否真实。
+
+任一非空白条件不满足时，抛出`HTTPException`，返回HTTP400及提示“岗位名称、我的技能和岗位要求不能为空”，不会继续执行技能匹配和数据库保存。
+
 #### 请求示例
 
 ```json

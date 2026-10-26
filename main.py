@@ -41,6 +41,15 @@ def analyze_resume(
    request:AnalyzeRequest,
    db = Depends(get_db)
    ):
+    if (
+        not request.position.strip()
+        or not any(skill.strip() for skill in request.user_skills)
+        or not any(skill.strip() for skill in request.required_skills)
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="岗位名称、我的技能和岗位要求不能为空"
+        )
     try:
       result = analyzer.analyze(
         request.user_skills,
@@ -79,7 +88,13 @@ def analyze_resume(
    response_model = ResponseModel
 )
 def get_history(db = Depends(get_db)):
-   result = db.query(AnalysisHistory).all()
+   try:
+      result = db.query(AnalysisHistory).all()
+   except SQLAlchemyError:
+      raise HTTPException(
+         status_code=500,
+         detail="历史记录查询失败"
+      )
    histories = [
       HistoryResponse.model_validate(item)
       for item in result

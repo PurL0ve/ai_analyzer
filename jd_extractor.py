@@ -2,10 +2,18 @@ import json
 import analyzer
 import os
 from dotenv import load_dotenv
-from openai import OpenAI,APITimeoutError
+from openai import (
+    OpenAI,
+    APITimeoutError,
+    APIConnectionError,
+    AuthenticationError,
+)
 
 
 def parse_required_skills(content):
+    if not isinstance(content, str):
+        print("模型返回内容必须是字符串")
+        return None
     try:
       data = json.loads(content)
       if isinstance(data, dict): 
@@ -55,6 +63,12 @@ def extract_required_skills(jd):
     )
     except APITimeoutError:
         print("请求超时，请稍后再试")
+        return None
+    except APIConnectionError:
+        print("模型服务连接失败，请检查网络")
+        return None
+    except AuthenticationError:
+        print("模型服务认证失败，请检查本地密钥配置")
         return None
     content = response.choices[0].message.content
     return parse_required_skills(content)
