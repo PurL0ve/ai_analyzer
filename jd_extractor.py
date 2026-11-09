@@ -26,6 +26,11 @@ def parse_required_skills(content):
           if not isinstance(skill, str):
             print("skills字段必须是字符串列表")
             return None
+          else:
+             skill = skill.strip()
+             if skill == "":
+                print("skills字段中不能包含空白技能")
+                return None
         return skills
       else:
         print("skills字段缺失或不是列表")

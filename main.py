@@ -33,6 +33,32 @@ class AnalyzeJDRequest(BaseModel):
    jd:str
    user_skills: list[str]
    position: str
+class ExtractJDRequest(BaseModel):
+   jd:str
+@app.post(
+      "/extract-jd",
+      response_model = ResponseModel
+      )
+def extract_jd(request:ExtractJDRequest):
+   jd = request.jd
+   if jd.strip() == "":
+      raise HTTPException(
+         status_code = 400,
+         detail = "JD不能为空"
+      )
+   required_skills = jd_extractor.extract_required_skills(jd)
+
+   if required_skills is None:
+      raise HTTPException(
+         status_code=502,
+         detail="JD技能提取失败"
+      )
+   return ResponseModel(
+      code = 200,
+      message = "success",
+      data = {"required_skills":required_skills}
+   )
+
 @app.post(
       "/analyze",
       response_model = ResponseModel
