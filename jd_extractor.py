@@ -9,7 +9,7 @@ from openai import (
     AuthenticationError,
 )
 
-
+# 解析函数
 def parse_required_skills(content):
     if not isinstance(content, str):
         print("模型返回内容必须是字符串")
@@ -37,7 +37,8 @@ def parse_required_skills(content):
     except json.JSONDecodeError:
       print("返回格式不正确")
     return None
-# 解析函数
+
+# 提取函数
 def extract_required_skills(jd):
     if not jd.strip():
         print("JD不能为空")
@@ -77,9 +78,68 @@ def extract_required_skills(jd):
         return None
     content = response.choices[0].message.content
     return parse_required_skills(content)
-# 提取函数
 
 
+def parse_jd_sections(content):
+    if not isinstance(content,str):
+      print("模型返回内容必须是字符串")
+      return None
+    try:
+      data = json.loads(content)
+      if isinstance(data, dict):
+        responsibilities = data.get("responsibilities")
+        required_skills = data.get("required_skills")
+        preferred_skills = data.get("preferred_skills") 
+      else: 
+         print("返回的JSON必须是对象")
+         return None
+      if responsibilities is None or required_skills is None or preferred_skills is None:
+         print("返回的JSON必须包含responsibilities、required_skills和preferred_skills字段")
+         return None
+      if isinstance(responsibilities,list) and isinstance(required_skills,list) and isinstance(preferred_skills,list):
+        for item in responsibilities:
+            if not isinstance(item,str):
+                print("responsibilities字段必须是字符串列表")
+                return None
+            if item.strip() == "":
+                print("responsibilities字段中的字符串不能为空")
+                return None
+        for skills in required_skills + preferred_skills:
+            if not isinstance(skills,str):
+                print("required_skills和preferred_skills字段必须是字符串列表")
+                return None
+            if skills.strip() == "":
+                print("required_skills和preferred_skills字段中的字符串不能为空")
+                return None
+        return {
+            "responsibilities": responsibilities,
+            "required_skills": required_skills,
+            "preferred_skills": preferred_skills
+         }
+      else:
+        print("responsibilities、required_skills和preferred_skills字段必须是列表")
+        return None
+    except json.JSONDecodeError:
+        print("返回格式不正确")
+        return None
+
+def analyze_jd_response(response, user_skills):
+    sections = extract_jd_sections_from_response(response)
+    if sections is not None:
+      result = analyzer.analyze(
+          user_skills=user_skills,
+          required_skills=sections["required_skills"]
+      )
+      return {
+          "sections": sections,
+          "analysis": result
+      }
+    else:
+      return None
+
+def extract_jd_sections_from_response(response):
+   content = response.choices[0].message.content
+   return parse_jd_sections(content)
 
 if __name__ == "__main__":
     content = '{"skills": ["Python", "FastAPI"]}'
