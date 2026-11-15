@@ -184,6 +184,41 @@ DEEPSEEK_API_KEY=<在本机填写有效密钥>
 
 `jd_extractor.py` 在函数内初始化客户端，导入模块不会主动发送模型请求。当前 `__main__` 是本地JSON解析与规则匹配样例。旧 `practice_llm.py` 是历史练习，包含顶层真实请求，不作为日常启动入口，也不要为导入检查而运行或导入它。
 
+### 三段式 JD 解析与匹配（本地验证）
+
+`jd_extractor.py` 提供三个可直接调用的函数，用于验证岗位职责、必需技能和加分技能的数据流。
+
+- `parse_jd_sections(content)` 解析 JSON 文本。成功时返回包含 `responsibilities`、`required_skills` 和 `preferred_skills` 的字典，每个字段都是字符串列表。空列表合法。缺少字段、类型不符、条目仅含空白或 JSON 格式错误时返回 `None`。
+- `extract_jd_sections_from_response(response)` 读取 `response.choices[0].message.content`，将正文传给三段式解析器。
+- `analyze_jd_response(response, user_skills)` 在解析成功后只将必需技能传给现有匹配器。结果的 `sections` 保留三组内容，`analysis` 保存 `matched`、`missing` 和 `rate`。解析失败时返回 `None`。
+
+在后端项目目录使用 PowerShell 复现固定响应对照。示例只调用本地函数，无需启动 FastAPI 或配置模型和数据库。
+
+```powershell
+@'
+import json
+from types import SimpleNamespace
+from jd_extractor import analyze_jd_response
+
+for preferred in ["Docker", "Linux"]:
+    content = json.dumps({
+        "responsibilities": ["Maintain API"],
+        "required_skills": ["Python"],
+        "preferred_skills": [preferred],
+    })
+    message = SimpleNamespace(content=content)
+    response = SimpleNamespace(choices=[SimpleNamespace(message=message)])
+    output = analyze_jd_response(response, ["Python"])
+    print("analysis:", output["analysis"])
+    print("responsibilities:", output["sections"]["responsibilities"])
+    print("preferred_skills:", output["sections"]["preferred_skills"])
+'@ | .\.venv\Scripts\python.exe -
+```
+
+两组的 `matched` 均为 `['python']`，`missing` 为 `[]`，`rate` 为 `1.0`。职责均为 `['Maintain API']`，加分项分别为 `['Docker']` 和 `['Linux']`。本地解析也已覆盖合法空列表、缺字段、字段值类型错误、空职责条目及非法 JSON。固定响应提取另验证了错误正文返回 `None`。
+
+这条三段式链路目前通过本地函数调用使用。现有 `/extract-jd` 仍返回 `data.required_skills` 单一列表，`/analyze-jd` 仍返回匹配结果。真实模型的三段式输出、HTTP 接口接线和 React 分组展示待接入验证。
+
 ### POST /extract-jd
 
 只接收字符串 `jd`，使用同一套模型配置、提取函数及响应校验。成功时通过 `data.required_skills` 返回技能列表，供前端填入岗位要求并由用户确认或编辑。页面根据原始清单与当前输入计算新增和移除项，有实际变化时可在前端恢复原清单。用户确认后另行提交 `POST /analyze` 完成规则匹配，历史记录使用确认后的 `required_skills`，保存来源为 `manual`。
@@ -321,7 +356,7 @@ DEEPSEEK_API_KEY=<在本机填写有效密钥>
 - JD 与手动分析共用历史表，旧记录保留未知来源。历史记录保存每次匹配使用的技能及来源。页面维护原始提取清单与增删对照，并在手动匹配结果卡中显示本次提交的岗位要求。历史表保存实际用于匹配的技能及分析来源。历史查询目前一次返回全部记录，顺序未指定。
 - 当前版本已有一次“浏览器→真实模型提取→数据库保存→历史展示”成功样例；该样例不替代完整回归、独立实现或全部异常路径验收。来源字段另用手动分析与固定提取JD样例验证，未为来源标记再次调用真实模型。
 - 本地实际SDK超时转换与业务捕获已有验证；外部DeepSeek服务超时、实际SDK超时到HTTP502的同次联合路径、其他连接/HTTP错误及完整边界回归仍未全面验证或处理。30秒/零重试配置仅静态核对，未据此重跑外部请求或验证整体接口耗时上限。
-- JSON结构合格不等于提取正确。匹配仅按清洗后的名称相等，不进行同义词/语义匹配，不区分必备与优先；空提取列表的rate为0，不代表用户确实一个技能都不匹配。
+- 结构校验只检查数据格式。提取是否符合 JD 原文仍需用标注样本核对。现有网页流程基于单一技能列表按清洗后的名称匹配，空列表的 `rate` 为 `0`。三段式的必需项匹配见本地验证示例。
 - 评估仍是小样本准备与有指导验证，未证明提示词稳定改善，也未形成整体效果、调用成本或准确率结论。
 - 尚未完成全新环境安装、初始化和运行的完整复现，以及公开部署或多用户认证/数据隔离验收。
 - 未实现RAG、Agent或个人能力档案，后续依据实际需求安排。
