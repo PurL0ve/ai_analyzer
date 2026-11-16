@@ -16,25 +16,32 @@ import jd_extractor
 
 app = FastAPI()
 
+# 跨域配置
 app.add_middleware(
    CORSMiddleware,
    allow_origins=["http://localhost:5173"],
    allow_credentials=True,
    allow_methods=["*"],
    allow_headers=["*"],
-) # 跨域配置
+) 
 
+# 分析请求模型
 class AnalyzeRequest(BaseModel):
   position: str
   user_skills: list[str]
   required_skills: list[str] 
-# 分析请求模型
+
+# 分析JD请求模型
 class AnalyzeJDRequest(BaseModel):
    jd:str
    user_skills: list[str]
    position: str
+
+# 提取JD请求模型
 class ExtractJDRequest(BaseModel):
    jd:str
+
+# 提取JD技能
 @app.post(
       "/extract-jd",
       response_model = ResponseModel
@@ -59,6 +66,7 @@ def extract_jd(request:ExtractJDRequest):
       data = {"required_skills":required_skills}
    )
 
+# 分析简历接口
 @app.post(
       "/analyze",
       response_model = ResponseModel
@@ -107,8 +115,9 @@ def analyze_resume(
        message = "success",
        data = result
     )
-# 分析简历接口
 
+
+# 获取分析历史接口
 @app.get(
    "/history",
    response_model = ResponseModel
@@ -130,8 +139,8 @@ def get_history(db = Depends(get_db)):
       message = "success",
       data = histories
    )
-# 获取分析历史接口
 
+# 分析JD接口
 @app.post(
       "/analyze-jd",
       response_model = ResponseModel
@@ -181,3 +190,30 @@ def analyze_jd(
       message = "success",
       data = result
    )
+
+@app.post(
+   "/extract-jd-sections",
+   response_model = ResponseModel
+)
+def extract_jd_sections_route(
+   request:ExtractJDRequest,
+   ):
+   if request.jd.strip() == "":
+      raise HTTPException(
+         status_code = 400,
+         detail = "JD不能为空"
+      )
+   sections = jd_extractor.extract_jd_sections(request.jd)
+
+   if sections is None:
+      raise HTTPException(
+         status_code = 502,
+         detail = "JD技能提取失败"
+      )
+   return ResponseModel(
+      code = 200,
+      message = "success",
+      data = sections
+   )
+
+

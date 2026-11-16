@@ -141,6 +141,46 @@ def extract_jd_sections_from_response(response):
    content = response.choices[0].message.content
    return parse_jd_sections(content)
 
+def extract_jd_sections(jd):
+   if not jd.strip():
+       print("JD不能为空")
+       return None
+   load_dotenv()
+
+   client = OpenAI(
+       api_key=os.getenv("DEEPSEEK_API_KEY"),
+       base_url="https://api.deepseek.com",
+       timeout = 30,
+       max_retries = 0
+   )
+   messages = [
+   {
+        "role": "system",
+        "content": "按 JD 原文提取职责、必需项和加分项，对应 responsibilities、`required_skills`、`preferred_skills`。三个值都用字符串列表，没有内容就用 []。正文只包含一个合法的 JSON 对象。"
+    },
+    {
+        "role": "user",
+        "content": jd
+    }
+   ]
+   try:
+       response = client.chat.completions.create(
+        model = "deepseek-flash",
+        messages = messages,
+        extra_body = {"thinking":{"type":"disabled"}}
+    )
+   except APITimeoutError:
+        print("请求超时，请稍后再试")
+        return None
+   except APIConnectionError:
+        print("模型服务连接失败，请检查网络")
+        return None
+   except AuthenticationError:
+        print("模型服务认证失败，请检查本地密钥配置")
+        return None
+   return extract_jd_sections_from_response(response)
+
+
 if __name__ == "__main__":
     content = '{"skills": ["Python", "FastAPI"]}'
     required_skills = parse_required_skills(content)
